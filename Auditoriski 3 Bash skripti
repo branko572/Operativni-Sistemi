@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if [ "$SHELL"="/bin/bash" ]
+then
+echo "bash e"
+else
+echo "its not bash lil bro its $SHELL"
+fi
