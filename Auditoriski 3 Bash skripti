@@ -1,3 +1,8 @@
+/*Да се напише командна процедура што ќе провери дали shell околината на најавениот
+корисник е BASH. Доколку не е, да ја испише работната shell околина преку променливата
+$SHELL. */
+
+
 #!/bin/bash
 
 if [ "$SHELL"="/bin/bash" ]
@@ -6,3 +11,5 @@ echo "bash e"
 else
 echo "its not bash lil bro its $SHELL"
 fi
+
+
