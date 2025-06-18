@@ -135,3 +135,207 @@ public class Worker extends Thread {
         }
     }
 }
+
+
+-----------------------------------------------------------
+
+
+
+package client;
+
+import java.io.*;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
+
+public class Client extends Thread{
+    private int serverPort;
+    private String serverAddress;
+
+    public Client(int serverPort, String serverAddress) {
+        this.serverPort = serverPort;
+        this.serverAddress = serverAddress;
+    }
+
+    public void run(){
+        try
+            (   Socket socket = new Socket(InetAddress.getByName(serverAddress), serverPort);
+                BufferedWriter socketWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+                BufferedReader userInputReader = new BufferedReader(new InputStreamReader(System.in));
+        ){
+            //    Chat Server with Logging
+//    Опис: Сервер кој дозволува клиентите да испраќаат пораки. Секоја порака се логира со timestamp и client IP.
+//
+//            Сервер:
+//
+//    Порта: 7070
+//
+//    За секој клиент нов Thread
+//
+//    Формат за порака: <timestamp> <client_ip>: <message>
+//
+//    Чува chatlog.txt
+//
+//    Клиент:
+//
+//    Чита од конзола и праќа пораки
+//
+//    Праќа QUIT за крај
+
+            System.out.println("Welcome to " + socket.getRemoteSocketAddress());
+
+
+            String line;
+
+
+
+
+            while ((line=userInputReader.readLine()) != null) {
+                socketWriter.write(line);
+                socketWriter.newLine();
+                socketWriter.flush();
+                if(line.equalsIgnoreCase("QUIT")){
+                    break;
+                }
+            }
+
+            System.out.println("Disconnected");
+
+        } catch (IOException e) {
+           e.printStackTrace();
+        }
+    }
+
+    public static void main(String[] args) {
+        Client client = new Client(7070, "localhost");
+        client.start();
+    }
+}
+
+
+
+
+package server;
+
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+public class Server extends Thread{
+    int port;
+    String logFilePath;
+
+    public Server(int port, String logFilePath) {
+        this.port = port;
+        this.logFilePath = logFilePath;
+    }
+
+    public void run(){
+        ServerSocket serverSocket = null;
+
+        try {
+            serverSocket = new ServerSocket(port);
+            Socket socket = null;
+
+            System.out.println("Starting server on port " + port);
+
+            while(true){
+                socket = serverSocket.accept();
+                new Worker(socket, logFilePath).start();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    public static void main(String[] args) {
+        Server server = new Server(7070, "log_file.txt");
+        server.start();
+    }
+}
+
+
+
+
+package server;
+
+import java.io.*;
+import java.net.Socket;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+public class Worker extends Thread {
+    Socket socket;
+    String logFilePath;
+    static HashMap<String, Integer> wordsHashMap = new HashMap<>();
+    static Lock lock = new ReentrantLock();
+    static int totalWords = 0;
+
+    public Worker(Socket socket, String logFilePath) {
+        this.socket = socket;
+        this.logFilePath = logFilePath;
+    }
+//    Chat Server with Logging
+//    Опис: Сервер кој дозволува клиентите да испраќаат пораки. Секоја порака се логира со timestamp и client IP.
+//
+//            Сервер:
+//
+//    Порта: 7070
+//
+//    За секој клиент нов Thread
+//
+//    Формат за порака: <timestamp> <client_ip>: <message>
+//
+//    Чува chatlog.txt
+//
+//    Клиент:
+//
+//    Чита од конзола и праќа пораки
+//
+//    Праќа QUIT за крај
+    public void run() {
+
+
+        try (
+                BufferedReader socketReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                BufferedWriter fileWriter = new BufferedWriter(new FileWriter(logFilePath, true))
+           ) {
+
+            String clientIP = socket.getInetAddress().getHostAddress();
+            String line;
+
+    while ((line = socketReader.readLine()) != null) {
+         if(line.equalsIgnoreCase("QUIT")){
+        break;
+        }
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        String logLine = timestamp + " " + clientIP + ": " + line;
+
+        fileWriter.write(logLine);
+        fileWriter.newLine();
+        fileWriter.flush();
+    }
+
+
+
+
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+}
+
+
+
+
+
+
+
+
+
